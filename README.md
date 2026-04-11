@@ -1,0 +1,1 @@
+An event-driven notification pipeline — a Flask producer emits events to Kafka, a Python consumer reads them and writes to PostgreSQL, and a React dashboard shows live throughput. Full Docker Compose stack, GitHub Actions CI.
