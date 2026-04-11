@@ -1,0 +1,103 @@
+# Environment & Credentials
+.env
+.env.local
+.env.*.local
+.env.production.local
+.env.development.local
+*.pem
+*.key
+credentials.json
+secrets/
+.aws/
+.confluent/
+
+# IDE & Editor Files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+.viminfo
+.editorconfig.swp
+
+# Node.js / npm
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm/
+dist/
+build/
+.next/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Docker
+docker-compose.override.yml
+.docker-compose.override.yml
+
+# Logs
+logs/
+*.log
+*.log.*
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sql.bak
+
+# Build & Artifacts
+dist/
+build/
+*.tar.gz
+*.zip
+
+# OS-specific
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+*.swp
+
+# Kubernetes (if using later)
+*.yaml.local
+k8s-local/
+
+# Misc
+.env.vault
+.vaultrc
