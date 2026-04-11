@@ -101,3 +101,7 @@ k8s-local/
 # Misc
 .env.vault
 .vaultrc
+
+# sqltools
+kafka_notifications.session.sql
+*.session.sql

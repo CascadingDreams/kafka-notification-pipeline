@@ -39,3 +39,25 @@ services:
     depends_on:
       kafka:
         condition: service_healthy
+
+# Postgres - port 5432 localhost
+  postgres:
+    image: postgres:16-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: kafka-notifications
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d kafka-notifications"]
+      interval: 5s
+      retries: 10
+      start_period: 10s
+      timeout: 5s
+
+volumes:
+  postgres_data:
