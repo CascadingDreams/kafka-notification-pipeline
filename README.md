@@ -2,31 +2,23 @@
 
 > 🚧 **Work in progress** — infrastructure built, services coming next.
 
-Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Flask producer API emits Avro-encoded events to Apache Kafka topics, a Python consumer processes and persists them to PostgreSQL, and a React dashboard visualises live event throughput as it flows through the pipeline.
+Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry, a TypeScript consumer processes and persists them to PostgreSQL, and a React dashboard visualises live event throughput as it flows through the pipeline.
 
 ---
 
-## Architecture
-
-```
-Rough diagram only
-```
-![kafka-notification-diagram](docs/imgs/kafka-notification-diagram-dark.png)
----
 
 ## Tech stack including future implementations
 
 | Layer | Technology | Notes |
 |---|---|---|
 | Message broker | Apache Kafka 3.9 (KRaft) | No Zookeeper — `apache/kafka:3.9.0` |
-| Schema format | Avro + Schema Registry | Enforces message contracts |
+| Schema format | Avro + Confluent Schema Registry | Enforces message contracts |
 | Kafka UI | Kafbat UI | Monitor topics at `localhost:8080` |
-| Producer | Python 3.12 + Flask | REST API, emits Avro-encoded events |
-| Consumer | Python 3.12 + confluent-kafka | Poll loop, manual offset commit |
+| Producer | TypeScript + Hono | REST API, Zod validation, emits Avro-encoded events |
+| Consumer | TypeScript + kafkajs | Poll loop, manual offset commit, DLQ |
 | Database | PostgreSQL 16 | Persists events, idempotent inserts |
-| Frontend | React 18 + Vite + recharts | Live pipeline visualiser |
-| Logging | structlog | Structured JSON — OpenSearch-ready |
-| Testing | pytest + pact-python | Unit, integration, contract tests |
+| Frontend | React 18 + Vite | Live pipeline visualiser |
+| Testing | vitest | Unit + integration tests |
 | Infra | Docker Compose | Full stack with one command |
 | CI | GitHub Actions | Lint + tests on push/PR |
 
@@ -37,12 +29,11 @@ Rough diagram only
 - [x] Docker Compose stack — Kafka (KRaft), Kafbat UI, PostgreSQL
 - [x] PostgreSQL schema — `events` table with idempotent insert pattern
 - [x] Makefile — `make up`, `make down`, `make logs`, `make db`, `make seed`, `make test`
-- [ ] Producer service — Flask API + Avro serialisation + AdminClient topic creation
-- [ ] Avro schemas + Schema Registry
-- [ ] Consumer service — poll loop, manual offset commit, DLQ, idempotent consumer
+- [ ] Producer service — Hono API + Zod validation + Avro serialisation + AdminClient topic creation
+- [ ] Avro schemas + Confluent Schema Registry
+- [ ] Consumer service — kafkajs poll loop, manual offset commit, DLQ, idempotent consumer
 - [ ] React dashboard — live pipeline visualiser + event log
 - [ ] GitHub Actions CI
-- [ ] Contract tests with pact-python
 
 ---
 
@@ -67,7 +58,7 @@ Rough diagram only
 | `make ps` | Show container status |
 | `make db` | Open psql in the postgres container |
 | `make seed` | Fire test events at the producer API |
-| `make test` | Run pytest in the producer container |
+| `make test` | Run vitest in the producer container |
 
 ---
 
