@@ -25,12 +25,12 @@ db:
 
 # Will target fire a test event at producer API - WIP
 seed:
-	curl -X POST http://localhost:5001/events \
+	curl -X POST http://localhost:3001/events \
 	-H 'Content-Type: application/json' \
 	-d '{"event_type": "user.registered", "user_id": "00000000-0000-0000-0000-000000000001"}'
 
-# Runs pytest
+# Runs vitest
 test:
-	docker compose exec producer pytest tests/ -v
+	docker compose exec producer npx vitest run
 
 # Running just make with no targer = docker compose up -d

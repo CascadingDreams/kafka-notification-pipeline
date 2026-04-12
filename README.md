@@ -24,6 +24,23 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 
 ---
 
+## Architecture
+
+![Architecture diagram](docs/imgs/Kafka-notification-pipeline-diagram.png)
+
+## Schema Registry flow
+
+- On startup, the producer registers its Avro schemas with Schema Registry and caches the returned schema IDs
+- When an HTTP request arrives, Zod validates the payload at the API boundary before anything touches Kafka
+- For each valid event, the producer encodes the payload as Avro bytes with the schema ID embedded, and produces it to the correct Kafka topic
+- The consumer receives raw Avro bytes and reads the embedded schema ID from each message
+- It fetches the matching Avro schema from Schema Registry using that ID
+- decode() converts the Avro bytes into a plain JavaScript object ready for processing
+- Because the schema ID travels with every message, producer and consumer never share schema files directly — Schema Registry is the single source of truth
+
+![Architecture diagram](docs/imgs/schema-registry-sequence.png)
+
+
 ## Build status
 
 - [x] Docker Compose stack — Kafka (KRaft), Kafbat UI, PostgreSQL
