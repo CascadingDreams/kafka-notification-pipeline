@@ -1,7 +1,7 @@
 {
   "type": "record",
   "name": "UserEvent",
-  "namespace": "com.pipelines.events",
+  "namespace": "com.pipeline.events",
   "fields" : [
     {"name": "event_id", "type": "string"},
     {"name": "event_type", "type": "string"},

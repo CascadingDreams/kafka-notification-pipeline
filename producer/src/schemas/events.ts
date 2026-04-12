@@ -12,7 +12,7 @@ export const UserEventInputSchema = z.object({
 export const TransactionEventInputSchema = z.object({
     event_type: z.enum(['transaction.completed', 'transaction.failed', 'transaction.threshold_exceeded']),
     user_id: z.string().uuid(),
-    amount: z.string().regex(/^\d{1,2}$/), // Assuming 2 decimal places
+    amount: z.number().positive(),
     currency: z.literal('AUD'),
     metadata: z.record(z.string(), z.string()).optional(),
 })

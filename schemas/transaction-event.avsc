@@ -1,7 +1,6 @@
 {
   "type": "record",
   "name": "TransactionEvent",
-  "namespace": "com.pipelines.events",
   "namespace": "com.pipeline.events",
   "fields": [
     { "name": "event_id",   "type": "string" },

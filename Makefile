@@ -10,7 +10,8 @@ up:
 down:
 	docker compose down
 
-rebuild: down up
+rebuild:
+	docker compose up -d --build
 
 logs:
 	docker compose logs -f
@@ -25,12 +26,12 @@ db:
 
 # Will target fire a test event at producer API - WIP
 seed:
-	curl -s -X POST http://localhost:3001/events \
+	curl -s -X POST http://localhost:3001/events/user \
 	  -H 'Content-Type: application/json' \
-	  -d '{"event_type": "user.registered", "user_id": "00000000-0000-0000-0000-000000000001"}'
-	curl -s -X POST http://localhost:3001/events \
+	  -d '{"event_type": "user.registered", "user_id": "550e8400-e29b-41d4-a716-446655440000"}'
+	curl -s -X POST http://localhost:3001/events/transactions \
 	  -H 'Content-Type: application/json' \
-	  -d '{"event_type": "transaction.threshold_exceeded", "user_id": "00000000-0000-0000-0000-000000000001", "amount": 9500.00, "currency": "AUD"}'
+	  -d '{"event_type": "transaction.threshold_exceeded", "user_id": "550e8400-e29b-41d4-a716-446655440000", "amount": 9500.00, "currency": "AUD"}'
 	@echo "Seeded. Check Kafka UI: http://localhost:8080"
 
 # Runs vitest
