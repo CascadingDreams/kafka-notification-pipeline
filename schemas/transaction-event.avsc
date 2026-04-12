@@ -1,0 +1,15 @@
+{
+  "type": "record",
+  "name": "TransactionEvent",
+  "namespace": "com.pipelines.events",
+  "namespace": "com.pipeline.events",
+  "fields": [
+    { "name": "event_id",   "type": "string" },
+    { "name": "event_type", "type": "string" },
+    { "name": "user_id",    "type": "string" },
+    { "name": "amount",     "type": "double" },
+    { "name": "currency",   "type": "string" },
+    { "name": "timestamp",  "type": "string" },
+    { "name": "metadata",   "type": { "type": "map", "values": "string" }, "default": {} }
+  ]
+}

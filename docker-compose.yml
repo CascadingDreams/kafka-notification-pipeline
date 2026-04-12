@@ -25,20 +25,31 @@ services:
       start_period: 30s
       timeout: 10s
 
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.0
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:9092
+    depends_on:
+      kafka:
+        condition: service_healthy
+
 # Kafka UI - kafbat
-  kafbat-ui:
-    container_name: kafbat-ui
+  kafka-ui:
     image: ghcr.io/kafbat/kafka-ui:latest
     ports:
       - "8080:8080"
     environment:
-      KAFKA_CLUSTERS_0_NAME: project-kafka-pipeline
+      KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
-      DYNAMIC_CONFIG_ENABLED: 'true'
-      SWAGGER_UI_ENABLED: 'true'
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
     depends_on:
       kafka:
         condition: service_healthy
+      schema-registry:
+        condition: service_started
 
 # Postgres - port 5432 localhost
   postgres:

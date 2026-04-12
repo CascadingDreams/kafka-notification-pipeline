@@ -25,12 +25,18 @@ db:
 
 # Will target fire a test event at producer API - WIP
 seed:
-	curl -X POST http://localhost:3001/events \
-	-H 'Content-Type: application/json' \
-	-d '{"event_type": "user.registered", "user_id": "00000000-0000-0000-0000-000000000001"}'
+	curl -s -X POST http://localhost:3001/events \
+	  -H 'Content-Type: application/json' \
+	  -d '{"event_type": "user.registered", "user_id": "00000000-0000-0000-0000-000000000001"}'
+	curl -s -X POST http://localhost:3001/events \
+	  -H 'Content-Type: application/json' \
+	  -d '{"event_type": "transaction.threshold_exceeded", "user_id": "00000000-0000-0000-0000-000000000001", "amount": 9500.00, "currency": "AUD"}'
+	@echo "Seeded. Check Kafka UI: http://localhost:8080"
 
 # Runs vitest
 test:
-	docker compose exec producer npx vitest run
+	cd producer && npm ci && npm test -- --run
+	cd consumer && npm ci && npm test -- --run
+	cd dashboard && npm ci && npm test -- --run
 
 # Running just make with no targer = docker compose up -d
