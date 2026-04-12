@@ -10,6 +10,8 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 
 > **[Technical Reference](docs/TECHNICAL.md)** — architecture decisions, Schema Registry flow, Kafka concepts, API endpoints and event schemas
 
+> **[Detailed dev log](https://www.notion.so/dev-log-kafka-notif-pipeline-33fedccf116b80a7a84ffdd0c9b46b72?source=copy_link)** — This project is designed for portfolio purposes, as such you may find my complete dev log to see decision making and debugging as I am developing.
+
 ---
 
 ## Tech stack
