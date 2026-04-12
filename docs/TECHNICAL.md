@@ -1,0 +1,178 @@
+# Technical Reference
+
+## Schema Registry flow
+
+- On startup, the producer registers its Avro schemas with Schema Registry and caches the returned schema IDs
+- When an HTTP request arrives, Zod validates the payload at the API boundary before anything touches Kafka
+- For each valid event, the producer encodes the payload as Avro bytes with the schema ID embedded, and produces it to the correct Kafka topic
+- The consumer receives raw Avro bytes and reads the embedded schema ID from each message
+- It fetches the matching Avro schema from Schema Registry using that ID
+- `decode()` converts the Avro bytes into a plain JavaScript object ready for processing
+- Because the schema ID travels with every message, producer and consumer never share schema files directly — Schema Registry is the single source of truth
+
+![Schema Registry sequence diagram](imgs/schema-registry-sequence.png)
+
+---
+
+## Event schemas
+
+All events are Avro-encoded. JSON representation:
+
+**user.events**
+```json
+{
+  "event_id": "uuid4",
+  "event_type": "user.registered | user.login | user.password_reset",
+  "user_id": "uuid4",
+  "timestamp": "ISO8601",
+  "metadata": {}
+}
+```
+
+**transaction.events**
+```json
+{
+  "event_id": "uuid4",
+  "event_type": "transaction.completed | transaction.failed | transaction.threshold_exceeded",
+  "user_id": "uuid4",
+  "amount": 0.00,
+  "currency": "AUD",
+  "timestamp": "ISO8601",
+  "metadata": {}
+}
+```
+
+---
+
+## Kafka concepts
+
+| Concept | Implementation | Why it matters |
+|---|---|---|
+| Topics | `user.events`, `transaction.events`, `dlq` | Logical channels per event type |
+| Partitions | 3 per topic | Parallelism — multiple consumers |
+| Consumer groups | `notification-group` | Horizontal scaling |
+| Manual offset commit | `enable.auto.commit: false` | At-least-once delivery guarantee |
+| Dead Letter Queue | `dlq` topic | Failed messages aren't lost |
+| Message keys | `user_id` | Ordering guaranteed per user |
+| Idempotent consumer | `ON CONFLICT DO NOTHING` on `event_id` | Safe on duplicate delivery |
+
+---
+
+## API reference
+
+Base URL (local): `http://localhost:3001`
+
+**Request flow**
+```
+start() → Kafka connects → Avro schemas registered → HTTP server on :3001
+POST /events/* → zValidator → build event → produceEvent (Avro encode → Kafka) → 202
+```
+
+All endpoints accept and return JSON. Events are Zod-validated at the HTTP boundary and Avro-encoded before being produced to Kafka.
+
+---
+
+### `GET /health`
+
+Returns the service health status.
+
+**Response `200`**
+```json
+{ "status": "ok" }
+```
+
+---
+
+### `POST /events/user`
+
+Publishes a user event to the `user.events` Kafka topic.
+
+**Request body**
+```json
+{
+  "event_type": "user.registered",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "metadata": {}
+}
+```
+
+| Field | Type | Required | Allowed values |
+|---|---|---|---|
+| `event_type` | string | yes | `user.registered`, `user.login`, `user.password_reset` |
+| `user_id` | string (UUID v4) | yes | — |
+| `metadata` | object | no | `Record<string, string>` |
+
+**Response `202`**
+```json
+{
+  "status": "accepted",
+  "event_id": "a1b2c3d4-..."
+}
+```
+
+**Example**
+```bash
+curl -s -X POST http://localhost:3001/events/user \
+  -H 'Content-Type: application/json' \
+  -d '{"event_type": "user.registered", "user_id": "550e8400-e29b-41d4-a716-446655440000"}'
+```
+
+---
+
+### `POST /events/transactions`
+
+Publishes a transaction event to the `transaction.events` Kafka topic.
+
+**Request body**
+```json
+{
+  "event_type": "transaction.threshold_exceeded",
+  "user_id": "550e8400-e29b-41d4-a716-446655440000",
+  "amount": 9500.00,
+  "currency": "AUD",
+  "metadata": {}
+}
+```
+
+| Field | Type | Required | Allowed values |
+|---|---|---|---|
+| `event_type` | string | yes | `transaction.completed`, `transaction.failed`, `transaction.threshold_exceeded` |
+| `user_id` | string (UUID v4) | yes | — |
+| `amount` | number (positive) | yes | — |
+| `currency` | string | yes | `AUD` |
+| `metadata` | object | no | `Record<string, string>` |
+
+**Response `202`**
+```json
+{
+  "status": "accepted",
+  "event_id": "a1b2c3d4-..."
+}
+```
+
+**Example**
+```bash
+curl -s -X POST http://localhost:3001/events/transactions \
+  -H 'Content-Type: application/json' \
+  -d '{"event_type": "transaction.threshold_exceeded", "user_id": "550e8400-e29b-41d4-a716-446655440000", "amount": 9500.00, "currency": "AUD"}'
+```
+
+---
+
+### Testing with Postman
+
+1. Start the stack: `make up`
+2. Wait for the producer healthcheck to pass: `make ps`
+3. Send requests to `http://localhost:3001`
+
+**Verified requests**
+
+| # | Method | Endpoint | Body |
+|---|---|---|---|
+| 1 | `GET` | `/health` | — |
+| 2 | `POST` | `/events/user` | `{"event_type": "user.registered", "user_id": "550e8400-e29b-41d4-a716-446655440000"}` |
+| 3 | `POST` | `/events/user` | `{"event_type": "user.login", "user_id": "550e8400-e29b-41d4-a716-446655440000"}` |
+| 4 | `POST` | `/events/transactions` | `{"event_type": "transaction.threshold_exceeded", "user_id": "550e8400-e29b-41d4-a716-446655440000", "amount": 9500.00, "currency": "AUD"}` |
+| 5 | `POST` | `/events/transactions` | `{"event_type": "transaction.completed", "user_id": "550e8400-e29b-41d4-a716-446655440000", "amount": 250.00, "currency": "AUD"}` |
+
+After each POST, confirm in Kafbat UI (`http://localhost:8080`) that the message landed in the correct topic with an Avro-encoded payload.
