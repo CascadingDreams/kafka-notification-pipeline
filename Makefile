@@ -46,5 +46,3 @@ seed:
 test:
 	cd producer && npm ci && npm test -- --run
 	cd consumer && npm ci && npm test -- --run
-
-# Running just make with no targer = docker compose up -d
