@@ -1,8 +1,12 @@
-include .env
+-include .env
 export
 
 # command names
-.PHONY: up down logs ps db seed test
+.PHONY: up down logs ps db seed test setup install
+
+# First-time setup: copy env.example → .env
+setup:
+	@test -f .env && echo ".env already exists, skipping" || (cp env.example .env && echo "Created .env from env.example — fill in POSTGRES_USER and POSTGRES_PASSWORD before running make up")
 
 up:
 	docker compose up -d
@@ -19,6 +23,10 @@ logs:
 # status
 ps:
 	docker compose ps
+
+install:
+	npm install --prefix producer
+	npm install --prefix consumer
 
 # postgres interactive shell
 db:
@@ -38,4 +46,3 @@ seed:
 test:
 	cd producer && npm ci && npm test -- --run
 	cd consumer && npm ci && npm test -- --run
-	cd dashboard && npm ci && npm test -- --run

@@ -73,6 +73,27 @@ services:
       start_period: 15s
       timeout: 5s
 
+  consumer:
+      build:
+        context: .
+        dockerfile: consumer/Dockerfile
+      environment:
+        KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+        SCHEMA_REGISTRY_URL: http://schema-registry:8081
+        POSTGRES_HOST: postgres
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: kafka-notifications
+      depends_on:
+        kafka:
+          condition: service_healthy
+        schema-registry:
+          condition: service_started
+        postgres:
+          condition: service_healthy
+        producer:
+          condition: service_started
+
 # Postgres - port 5432 localhost
   postgres:
     image: postgres:16-alpine
