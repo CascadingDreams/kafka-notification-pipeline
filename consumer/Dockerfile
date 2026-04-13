@@ -2,21 +2,21 @@
 FROM node:24-alpine AS builder
 WORKDIR /app
 
-COPY producer/package*.json ./
+COPY consumer/package*.json ./
 RUN npm install
 
-COPY producer/ .
+COPY consumer/ .
 RUN npm run build
 
 # Stage 2: runtime
 FROM node:24-alpine
 WORKDIR /app
 
-COPY producer/package*.json ./
+COPY consumer/package*.json ./
 RUN npm install --omit=dev
 
 COPY --from=builder /app/dist ./dist
-# producer.ts resolves schemas three levels above dist/kafka/ → /schemas/
+# consumer will need schemas for Avro decode
 COPY schemas/ /schemas/
 
 CMD ["node", "--no-warnings", "dist/index.js"]

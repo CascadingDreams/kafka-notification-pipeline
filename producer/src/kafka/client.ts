@@ -1,4 +1,4 @@
-import { Kafka } from 'kafkajs'
+import { Kafka, logLevel } from 'kafkajs'
 import { SchemaRegistry } from '@kafkajs/confluent-schema-registry'
 
 const isProduction = process.env.NODE_ENV === 'production'
@@ -6,6 +6,7 @@ const isProduction = process.env.NODE_ENV === 'production'
 export const kafka = new Kafka({
     clientId: 'notification-producer',
     brokers: [process.env.KAFKA_BOOTSTRAP_SERVERS ?? 'localhost:9094'],
+    logLevel: logLevel.NOTHING,
     ...(isProduction && {
         ssl: true,
         sasl: {

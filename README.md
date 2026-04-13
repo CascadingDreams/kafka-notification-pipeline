@@ -37,13 +37,15 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 
 ## Build status
 
-- [x] Docker Compose stack — Kafka (KRaft), Kafbat UI, PostgreSQL, Schema Registry, Producer
+- [x] Docker Compose stack — Kafka (KRaft), Kafbat UI, PostgreSQL, Schema Registry, Producer, Consumer
 - [x] PostgreSQL schema — `events` table with idempotent insert pattern
 - [x] Makefile — `make up`, `make down`, `make logs`, `make db`, `make seed`, `make test`
 - [x] Producer service — Hono API + Zod validation + Avro serialisation + Schema Registry registration
 - [x] Avro schemas + Confluent Schema Registry — `user-event` and `transaction-event` schemas registered on startup
 - [x] `make seed` + Postman — both endpoints verified end-to-end
-- [ ] Consumer service — kafkajs poll loop, manual offset commit, DLQ, idempotent consumer
+- [x] Producer — suppress noisy KafkaJS partitioner warning; Schema Registry readiness probe before startup
+- [x] Consumer scaffold — Dockerfile, package.json, tsconfig, kafkajs connection + topic subscription wired into Docker Compose
+- [ ] Consumer service — Avro decoding via Schema Registry, PostgreSQL persistence, manual offset commit, DLQ
 - [ ] React dashboard — live pipeline visualiser + event log
 - [ ] GitHub Actions CI
 
@@ -85,12 +87,17 @@ make down    # stop and remove containers
 
 ## Environment variables
 
-Copy `env.example` to `.env`:
+Copy `env.example` to `.env` (or run `make setup`):
 
 ```
 POSTGRES_USER=
 POSTGRES_PASSWORD=
+KAFKA_BOOTSTRAP_SERVERS=localhost:9094
+SCHEMA_REGISTRY_URL=http://localhost:8081
+KAFKAJS_NO_PARTITIONER_WARNING=   # optional
 ```
+
+Production deployments also require `KAFKA_API_KEY`, `KAFKA_API_SECRET`, `SCHEMA_REGISTRY_API_KEY`, and `SCHEMA_REGISTRY_API_SECRET`.
 
 Never commit `.env` — it is gitignored.
 

@@ -28,9 +28,28 @@ export async function connectProducer() {
     console.log('Kafka producer connected')
 }
 
+async function waitForSchemaRegistery(maxRetries = 10): Promise<void> {
+    //health check for schema registry runs before producer runs
+    const registryUrl = process.env.SCHEMA_REGISTRY_URL ?? 'http://localhost:8081'
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const res = await fetch(`${registryUrl}/subjects`)
+            if (res.ok) {
+                console.log('Schema Registry ready')
+                return
+            }
+        } catch {
+            console.log(`Schema Registry not ready, retrying... (${i + 1}/${maxRetries})`)
+            await new Promise(resolve => setTimeout(resolve, 2000))
+        }
+    }
+    throw new Error('Schema Registry failed to become ready')
+}
+
 
 export async function registerSchemas() {
     // reads both .avsc files, registers them with Schema Registry, caches the returned IDs.
+    await waitForSchemaRegistery()
     const userAvsc = JSON.parse(
         // reads user-event.avsc, returns string instead of bytes then converts into obj
         readFileSync(join(__dirname, '../../../schemas/user-event.avsc'), 'utf-8')
