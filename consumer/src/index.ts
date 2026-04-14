@@ -1,6 +1,7 @@
 import { Kafka } from 'kafkajs'
 import 'dotenv/config'
 import { SchemaRegistry } from '@kafkajs/confluent-schema-registry'
+import { insertEvent } from './db.js'
 
 const kafka = new Kafka({
     clientId: 'notification-consumer',
@@ -23,7 +24,9 @@ async function runConsumer(): Promise<void> {
         autoCommit: false,
         eachMessage: async ({ topic, partition, message }) => {
             // decodes schema msg to json obj using schemaid
+            if (!message.value) return // can be null but registry.decode expects buffer
             const decodedValue = await registry.decode(message.value)
+            await insertEvent(decodedValue)
             console.log({ decodedValue })
             console.log('Received message:')
             console.log('  topic:', topic)

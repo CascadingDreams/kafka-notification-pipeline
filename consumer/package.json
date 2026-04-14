@@ -15,10 +15,12 @@
   "dependencies": {
     "@kafkajs/confluent-schema-registry": "^4.0.8",
     "dotenv": "^16.4.5",
-    "kafkajs": "^2.2.4"
+    "kafkajs": "^2.2.4",
+    "pg": "^8.20.0"
   },
   "devDependencies": {
     "@types/node": "^25.6.0",
+    "@types/pg": "^8.20.0",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2",
     "vitest": "^4.1.4"
