@@ -26,7 +26,10 @@ async function runConsumer(): Promise<void> {
             // decodes schema msg to json obj using schemaid
             if (!message.value) return // can be null but registry.decode expects buffer
             const decodedValue = await registry.decode(message.value)
+            // write to db
             await insertEvent(decodedValue)
+            // sets offset manually
+            await consumer.commitOffsets([{ topic: topic, partition: partition, offset: String(Number(message.offset) + 1) }])
             console.log({ decodedValue })
             console.log('Received message:')
             console.log('  topic:', topic)
