@@ -58,6 +58,24 @@ All events are Avro-encoded. JSON representation:
 
 ---
 
+## Consumer
+
+Subscribes to `user.events` and `transaction.events` as group `notification-group`.
+
+For each message: decode Avro via Schema Registry → insert to PostgreSQL → commit offset. On any error, the raw bytes are forwarded to `dlq` and the consumer moves on.
+
+**At-least-once delivery** — `autoCommit: false`, offset only commits after a successful DB write. The idempotent insert (`ON CONFLICT (event_id) DO NOTHING`) handles redelivery safely.
+
+**Database insert**
+```sql
+INSERT INTO events(event_id, event_type, user_id, payload, occurred_at)
+VALUES ($1, $2, $3, $4, $5)
+ON CONFLICT (event_id) DO NOTHING
+```
+Transaction fields (`amount`, `currency`, `metadata`) are stored in the JSONB `payload` column. Both event types share this insert path.
+
+---
+
 ## API reference
 
 Base URL (local): `http://localhost:3001`

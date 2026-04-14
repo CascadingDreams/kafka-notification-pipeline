@@ -1,14 +1,16 @@
 # kafka-notification-pipeline
 
-> **Work in progress** — producer API, Avro schemas, and Schema Registry live. Consumer and dashboard coming next.
+> **Work in progress** — producer and consumer pipeline complete end-to-end. React dashboard coming next.
 
-Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry, a TypeScript consumer processes and persists them to PostgreSQL, and a React dashboard visualises live event throughput as it flows through the pipeline.
+Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry. A TypeScript consumer decodes each message using the embedded schema ID, persists it to PostgreSQL with idempotent inserts, commits offsets manually for at-least-once delivery, and routes any failed messages to a dead letter queue. A React dashboard will visualise live event throughput as it flows through the pipeline.
 
 ---
 
 ### For a deeper dive into this project
 
-> **[Technical Reference](docs/TECHNICAL.md)** — architecture decisions, Schema Registry flow, Kafka concepts, API endpoints and event schemas
+> **[Architecture](docs/ARCHITECTURE.md)** — component overview, data flow, and design decisions
+
+> **[Technical Reference](docs/TECHNICAL.md)** — Schema Registry flow, consumer flow, Kafka concepts, API endpoints and event schemas
 
 > **[Detailed dev log](https://www.notion.so/dev-log-kafka-notif-pipeline-33fedccf116b80a7a84ffdd0c9b46b72?source=copy_link)** — This project is designed for portfolio purposes, as such you may find my complete dev log to see decision making and debugging as I am developing.
 
@@ -47,7 +49,7 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 - [x] `make seed` + Postman — both endpoints verified end-to-end
 - [x] Producer — suppress noisy KafkaJS partitioner warning; Schema Registry readiness probe before startup
 - [x] Consumer scaffold — Dockerfile, package.json, tsconfig, kafkajs connection + topic subscription wired into Docker Compose
-- [ ] Consumer service — Avro decoding via Schema Registry, PostgreSQL persistence, manual offset commit, DLQ
+- [x] Consumer service — Avro decoding via Schema Registry, PostgreSQL persistence, manual offset commit, DLQ routing
 - [ ] React dashboard — live pipeline visualiser + event log
 - [ ] GitHub Actions CI
 
