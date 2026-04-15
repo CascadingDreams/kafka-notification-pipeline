@@ -5,6 +5,7 @@ import { randomUUID } from 'crypto'
 import { logger } from 'hono/logger'
 import { connectProducer, registerSchemas, produceEvent } from './kafka/producer.js'
 import { UserEventInputSchema, TransactionEventInputSchema } from './schemas/events.js'
+import { pool } from './db.js'
 
 const app = new Hono()
 
@@ -53,6 +54,26 @@ app.post(
         return c.json({ status: 'accepted', event_id: event.event_id }, 202)
     }
 )
+
+app.get(
+    // returns event ocunts grouped by type
+    '/stats',
+    async (c) => {
+        const result = await pool.query(
+            'SELECT event_type, COUNT(*) FROM events GROUP BY event_type'
+        )
+        return c.json(result.rows)
+    })
+
+app.get(
+    // returns last 10 events
+    'events/recent',
+    async (c) => {
+        const result = await pool.query(
+            'SELECT * FROM events ORDER BY occurred_at DESC LIMIT 10'
+        )
+        return c.json(result.rows)
+    })
 
 // runs everything in correct order on startup - connectProducer and registerSchemas are async
 async function start() {
