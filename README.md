@@ -1,6 +1,6 @@
 # kafka-notification-pipeline
 
-Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry. A TypeScript consumer decodes each message using the embedded schema ID, persists it to PostgreSQL with idempotent inserts, commits offsets manually for at-least-once delivery, and routes any failed messages to a dead letter queue. A React 18 dashboard polls the producer API every 3 seconds to visualise live event throughput, per-type stat cards, a pipeline flow diagram, and a scrollable event log.
+Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry. A TypeScript consumer decodes each message using the embedded schema ID, persists it to PostgreSQL with idempotent inserts, commits offsets manually for at-least-once delivery, and routes any failed messages to a dead letter queue. A React 18 + TypeScript dashboard polls the producer API every 3 seconds to visualise live event throughput, per-type stat cards, a pipeline flow diagram, and a scrollable event log.
 
 ---
 
@@ -22,8 +22,8 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 | Producer | TypeScript + Hono | REST API, Zod validation, Avro-encoded events |
 | Consumer | TypeScript + kafkajs | Poll loop, manual offset commit, DLQ |
 | Database | PostgreSQL 16 | Persists events, idempotent inserts |
-| Frontend | React 18 + Vite | Live pipeline visualiser |
-| Testing | vitest | Unit + integration tests |
+| Frontend | React 18 + TypeScript + Vite | Live pipeline visualiser |
+| Testing | Vitest + Testing Library | Unit tests across producer, consumer, and dashboard |
 | Infra | Docker Compose | Full stack with one command |
 | CI | GitHub Actions | Lint + tests on push/PR |
 
@@ -47,6 +47,8 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 - [x] Consumer scaffold — Dockerfile, package.json, tsconfig, kafkajs connection + topic subscription wired into Docker Compose
 - [x] Consumer service — Avro decoding via Schema Registry, PostgreSQL persistence, manual offset commit, DLQ routing
 - [x] React dashboard — live pipeline visualiser, stat cards, throughput chart, event log (polls every 3 s)
+- [x] Dashboard migrated to TypeScript — all components typed, shared `types.ts`, strict mode enabled
+- [x] Dashboard component tests — 21 tests across StatCards, EventLog, Pipeline, Throughput (Vitest + Testing Library)
 - [ ] GitHub Actions CI
 
 ---

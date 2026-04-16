@@ -8,14 +8,25 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts'
+import { Stat } from '../types'
 
-const TOPIC_COLORS = {
-  'user.registered': '#22c55e',
-  'transaction.threshold_exceeded': '#3b82f6',
-  dlq: '#ef4444',
+interface ChartDatum {
+  name: string
+  count: number
+  color: string
 }
 
-const getColor = (eventType) => {
+interface CustomTooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number }>
+  label?: string
+}
+
+interface Props {
+  stats: Stat[]
+}
+
+const getColor = (eventType: string): string => {
   const lower = eventType.toLowerCase()
   if (lower.includes('user')) return '#22c55e'
   if (lower.includes('transaction')) return '#3b82f6'
@@ -23,7 +34,7 @@ const getColor = (eventType) => {
   return '#a855f7'
 }
 
-const CustomTooltip = ({ active, payload, label }) => {
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload?.length) return null
   return (
     <div style={{
@@ -39,8 +50,8 @@ const CustomTooltip = ({ active, payload, label }) => {
   )
 }
 
-export default function Throughput({ stats }) {
-  const data = stats.map((s) => ({
+export default function Throughput({ stats }: Props) {
+  const data: ChartDatum[] = stats.map((s) => ({
     name: s.event_type,
     count: parseInt(s.count, 10),
     color: getColor(s.event_type),

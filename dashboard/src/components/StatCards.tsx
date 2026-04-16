@@ -1,4 +1,18 @@
-export default function StatCards({ stats }) {
+import { Stat } from '../types'
+
+interface Card {
+  label: string
+  value: number
+  icon: string
+  accent: string
+  sub: string
+}
+
+interface Props {
+  stats: Stat[]
+}
+
+export default function StatCards({ stats }: Props) {
   const totalProduced = stats.reduce((sum, s) => sum + parseInt(s.count, 10), 0)
   const totalConsumed = totalProduced
   const dlqCount = stats
@@ -6,7 +20,7 @@ export default function StatCards({ stats }) {
     .reduce((sum, s) => sum + parseInt(s.count, 10), 0)
   const consumerLag = 0
 
-  const cards = [
+  const cards: Card[] = [
     {
       label: 'Total Produced',
       value: totalProduced,
@@ -43,7 +57,7 @@ export default function StatCards({ stats }) {
         <div
           key={c.label}
           className="stat-card"
-          style={{ '--stat-accent': c.accent }}
+          style={{ '--stat-accent': c.accent } as React.CSSProperties}
           data-testid={`stat-card-${c.label.toLowerCase().replace(/\s+/g, '-')}`}
         >
           <span className="stat-label">{c.label}</span>

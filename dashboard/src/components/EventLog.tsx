@@ -1,4 +1,10 @@
-const getEventClass = (eventType) => {
+import { Event } from '../types'
+
+interface Props {
+  events: Event[]
+}
+
+const getEventClass = (eventType: string): string => {
   const lower = (eventType || '').toLowerCase()
   if (lower.includes('dlq')) return 'dlq'
   if (lower.includes('user')) return 'user'
@@ -6,7 +12,7 @@ const getEventClass = (eventType) => {
   return 'user'
 }
 
-const getStatusClass = (status) => {
+const getStatusClass = (status: string | undefined): string => {
   if (!status) return 'status-pending'
   const s = status.toLowerCase()
   if (s === 'processed' || s === 'consumed') return 'status-processed'
@@ -14,7 +20,7 @@ const getStatusClass = (status) => {
   return 'status-pending'
 }
 
-const formatTime = (ts) => {
+const formatTime = (ts: string | undefined): string => {
   if (!ts) return '—'
   try {
     return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
@@ -23,10 +29,12 @@ const formatTime = (ts) => {
   }
 }
 
-const truncate = (str, n = 20) =>
-  typeof str === 'string' && str.length > n ? str.slice(0, n) + '…' : str ?? '—'
+const truncate = (str: string | undefined, n = 20): string => {
+  if (typeof str === 'string' && str.length > n) return str.slice(0, n) + '…'
+  return str ?? '—'
+}
 
-export default function EventLog({ events }) {
+export default function EventLog({ events }: Props) {
   return (
     <div className="event-log-card" data-testid="event-log">
       <p className="card-title">Recent Events</p>

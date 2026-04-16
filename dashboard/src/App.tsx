@@ -1,17 +1,18 @@
 import { useState, useEffect, useCallback } from 'react'
-import StatCards from './components/StatCards.jsx'
-import Pipeline from './components/Pipeline.jsx'
-import Throughput from './components/Throughput.jsx'
-import EventLog from './components/EventLog.jsx'
+import StatCards from './components/StatCards'
+import Pipeline from './components/Pipeline'
+import Throughput from './components/Throughput'
+import EventLog from './components/EventLog'
+import { Stat, Event, Toast, ToastType } from './types'
 
 const API_BASE = 'http://localhost:3001'
 const POLL_INTERVAL = 3000
 
 export default function App() {
-  const [stats, setStats] = useState([])
-  const [recentEvents, setRecentEvents] = useState([])
-  const [lastUpdated, setLastUpdated] = useState(null)
-  const [toasts, setToasts] = useState([])
+  const [stats, setStats] = useState<Stat[]>([])
+  const [recentEvents, setRecentEvents] = useState<Event[]>([])
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [toasts, setToasts] = useState<Toast[]>([])
 
   const fetchData = useCallback(async () => {
     try {
@@ -33,7 +34,7 @@ export default function App() {
     return () => clearInterval(id)
   }, [fetchData])
 
-  const addToast = useCallback((msg, type = 'success') => {
+  const addToast = useCallback((msg: string, type: ToastType = 'success') => {
     const id = Date.now()
     setToasts((prev) => [...prev, { id, msg, type }])
     setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 3000)

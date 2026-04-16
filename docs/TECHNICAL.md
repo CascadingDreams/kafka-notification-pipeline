@@ -234,14 +234,38 @@ After each POST, confirm in Kafbat UI (`http://localhost:8080`) that the message
 
 ## Dashboard
 
-React 18 + Vite app served at `http://localhost:3000`. Polls the producer API every 3 seconds.
+React 18 + TypeScript + Vite app served at `http://localhost:3000`. Polls the producer API every 3 seconds.
 
-| Component | What it shows |
+**Source structure**
+```
+dashboard/src/
+├── types.ts                  # Shared interfaces: Stat, Event, Toast, ToastType
+├── App.tsx                   # Root — fetch loop, toast state, event dispatch
+├── main.tsx                  # React DOM entry point
+└── components/
+    ├── StatCards.tsx         # Four summary counters
+    ├── Pipeline.tsx          # Animated flow diagram + send buttons
+    ├── Throughput.tsx        # Bar chart (Recharts)
+    └── EventLog.tsx          # Scrollable recent-events list
+```
+
+**Shared types (`src/types.ts`)**
+
+| Type | Fields |
 |---|---|
-| `StatCards` | Per-event-type counts pulled from `GET /stats` |
-| `Throughput` | Bar chart of event counts by type (Recharts) |
-| `Pipeline` | Flow diagram with send buttons for user and transaction events |
-| `EventLog` | Scrollable list of the 10 most recent events from `GET /events/recent` |
+| `Stat` | `event_type: string`, `count: string` |
+| `Event` | `id?`, `event_id?`, `event_type`, `user_id?`, `occurred_at?`, `status?` |
+| `Toast` | `id: number`, `msg: string`, `type: ToastType` |
+| `ToastType` | `'success' \| 'error'` |
+
+**Components**
+
+| Component | Props | What it shows |
+|---|---|---|
+| `StatCards` | `stats: Stat[]` | Total produced, consumed, DLQ count, consumer lag |
+| `Throughput` | `stats: Stat[]` | Bar chart of event counts per topic (Recharts) |
+| `Pipeline` | send callbacks, event handlers | Animated node flow + send buttons for user and transaction events |
+| `EventLog` | `events: Event[]` | Scrollable list of the 10 most recent events |
 
 **Data flow**
 ```
@@ -249,4 +273,30 @@ Dashboard (every 3 s) → GET /stats + GET /events/recent → Producer API → P
                        ← JSON response ←
 ```
 
-The dashboard can also trigger new events directly via the Pipeline component, which POSTs to `/events/user` and `/events/transactions` and then immediately re-fetches to reflect the new state.
+The dashboard can also trigger new events directly via the Pipeline component, which POSTs to `/events/user` and `/events/transactions` and immediately re-fetches to reflect the new state.
+
+---
+
+## Testing
+
+Tests run with Vitest + jsdom + Testing Library across all three services.
+
+```bash
+make test          # run all tests (producer + consumer + dashboard)
+```
+
+Or per-service:
+```bash
+cd dashboard && npm test
+cd producer  && npm test
+cd consumer  && npm test
+```
+
+**Dashboard test suite**
+
+| File | Tests | What is covered |
+|---|---|---|
+| `StatCards.test.tsx` | 5 | Zero state, count summation, DLQ filtering, card presence |
+| `EventLog.test.tsx` | 7 | Empty state, row count, event types, CSS classes per type and status |
+| `Pipeline.test.tsx` | 5 | Node/arrow rendering, send callbacks, error path |
+| `Throughput.test.tsx` | 3 | Empty state message, chart container with data |
