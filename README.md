@@ -1,8 +1,6 @@
 # kafka-notification-pipeline
 
-> **Work in progress** — producer and consumer pipeline complete end-to-end. React dashboard coming next.
-
-Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry. A TypeScript consumer decodes each message using the embedded schema ID, persists it to PostgreSQL with idempotent inserts, commits offsets manually for at-least-once delivery, and routes any failed messages to a dead letter queue. A React dashboard will visualise live event throughput as it flows through the pipeline.
+Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry. A TypeScript consumer decodes each message using the embedded schema ID, persists it to PostgreSQL with idempotent inserts, commits offsets manually for at-least-once delivery, and routes any failed messages to a dead letter queue. A React 18 dashboard polls the producer API every 3 seconds to visualise live event throughput, per-type stat cards, a pipeline flow diagram, and a scrollable event log.
 
 ---
 
@@ -48,7 +46,7 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 - [x] Producer — suppress noisy KafkaJS partitioner warning; Schema Registry readiness probe before startup
 - [x] Consumer scaffold — Dockerfile, package.json, tsconfig, kafkajs connection + topic subscription wired into Docker Compose
 - [x] Consumer service — Avro decoding via Schema Registry, PostgreSQL persistence, manual offset commit, DLQ routing
-- [ ] React dashboard — live pipeline visualiser + event log
+- [x] React dashboard — live pipeline visualiser, stat cards, throughput chart, event log (polls every 3 s)
 - [ ] GitHub Actions CI
 
 ---
@@ -82,7 +80,7 @@ make down    # stop and remove containers
 | Kafbat UI | http://localhost:8080 |
 | Schema Registry | http://localhost:8081 |
 | Producer API | http://localhost:3001 |
-| Dashboard | http://localhost:3000 *(not yet built)* |
+| Dashboard | http://localhost:3000 |
 | PostgreSQL | `localhost:5432` |
 
 ---

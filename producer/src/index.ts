@@ -6,11 +6,13 @@ import { logger } from 'hono/logger'
 import { connectProducer, registerSchemas, produceEvent } from './kafka/producer.js'
 import { UserEventInputSchema, TransactionEventInputSchema } from './schemas/events.js'
 import { pool } from './db.js'
+import { cors } from 'hono/cors'
 
 const app = new Hono()
 
 // logs requests to endpoints
 app.use('*', logger())
+app.use('*', cors())
 
 // Register GET route at /health -> sends JSON response (used by fly.io for health checks)
 app.get('/health', (c) => c.json({ status: 'ok' }))

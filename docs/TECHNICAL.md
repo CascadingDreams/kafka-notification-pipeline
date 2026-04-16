@@ -84,6 +84,8 @@ Base URL (local): `http://localhost:3001`
 ```
 start() → Kafka connects → Avro schemas registered → HTTP server on :3001
 POST /events/* → zValidator → build event → produceEvent (Avro encode → Kafka) → 202
+GET  /stats          → SELECT event_type, COUNT(*) FROM events GROUP BY event_type
+GET  /events/recent  → SELECT * FROM events ORDER BY occurred_at DESC LIMIT 10
 ```
 
 All endpoints accept and return JSON. Events are Zod-validated at the HTTP boundary and Avro-encoded before being produced to Kafka.
@@ -177,6 +179,39 @@ curl -s -X POST http://localhost:3001/events/transactions \
 
 ---
 
+### `GET /stats`
+
+Returns event counts grouped by event type. Queries the `events` table directly.
+
+**Response `200`**
+```json
+[
+  { "event_type": "user.registered", "count": "12" },
+  { "event_type": "transaction.threshold_exceeded", "count": "5" }
+]
+```
+
+---
+
+### `GET /events/recent`
+
+Returns the 10 most recent events ordered by `occurred_at` descending.
+
+**Response `200`**
+```json
+[
+  {
+    "event_id": "a1b2c3d4-...",
+    "event_type": "user.registered",
+    "user_id": "550e8400-...",
+    "payload": {},
+    "occurred_at": "2026-04-16T10:00:00.000Z"
+  }
+]
+```
+
+---
+
 ### Testing with Postman
 
 1. Start the stack: `make up`
@@ -194,3 +229,24 @@ curl -s -X POST http://localhost:3001/events/transactions \
 | 5 | `POST` | `/events/transactions` | `{"event_type": "transaction.completed", "user_id": "550e8400-e29b-41d4-a716-446655440000", "amount": 250.00, "currency": "AUD"}` |
 
 After each POST, confirm in Kafbat UI (`http://localhost:8080`) that the message landed in the correct topic with an Avro-encoded payload.
+
+---
+
+## Dashboard
+
+React 18 + Vite app served at `http://localhost:3000`. Polls the producer API every 3 seconds.
+
+| Component | What it shows |
+|---|---|
+| `StatCards` | Per-event-type counts pulled from `GET /stats` |
+| `Throughput` | Bar chart of event counts by type (Recharts) |
+| `Pipeline` | Flow diagram with send buttons for user and transaction events |
+| `EventLog` | Scrollable list of the 10 most recent events from `GET /events/recent` |
+
+**Data flow**
+```
+Dashboard (every 3 s) → GET /stats + GET /events/recent → Producer API → PostgreSQL
+                       ← JSON response ←
+```
+
+The dashboard can also trigger new events directly via the Pipeline component, which POSTs to `/events/user` and `/events/transactions` and then immediately re-fetches to reflect the new state.
