@@ -31,10 +31,6 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 
 ## Architecture
 
-![Architecture diagram](docs/imgs/Kafka-notification-pipeline-diagram.png)
-
-### 1. The big picture
-
 _What is this system doing at a high level?_
 
 ```mermaid
