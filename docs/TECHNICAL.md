@@ -1,5 +1,42 @@
 # Technical Reference
 
+## Producer and Consumer flows
+
+### Inside the Producer — how an event gets in
+
+_What happens between receiving the HTTP request and publishing to Kafka?_
+
+```mermaid
+flowchart TD
+    A["POST /events/user or /events/transactions"] --> B["Zod validates the request body"]
+    B -->|"invalid"| C["400 Bad Request"]
+    B -->|"valid"| D["Fetch schema ID from Schema Registry"]
+    D --> E["Encode event as Avro bytes"]
+    E --> F["Publish to Kafka topic"]
+    F --> G["202 Accepted"]
+```
+
+**Zod** checks the shape of the incoming JSON (correct fields, correct types). **Avro** is a compact binary format — before encoding, the Producer fetches a schema ID from the **Schema Registry** so both producer and consumer agree on the message format.
+
+### Inside the Consumer — how a message gets processed
+
+_What happens after Kafka delivers a message?_
+
+```mermaid
+flowchart TD
+    A["New message arrives from Kafka"] --> B["Decode Avro bytes using schema ID"]
+    B -->|"decode fails"| E["Send raw bytes to DLQ topic"]
+    B -->|"decoded OK"| C["INSERT into PostgreSQL events table"]
+    C -->|"insert fails"| E
+    C -->|"insert OK"| D["Commit offset back to Kafka"]
+```
+
+The **offset** tells Kafka how far the Consumer has read. The Consumer only commits the offset **after** a successful save — so if something crashes, the message gets redelivered. This is called **at-least-once delivery**.
+
+The **DLQ** (Dead Letter Queue) is a separate Kafka topic where broken messages land so they aren't lost and can be inspected later.
+
+---
+
 ## Schema Registry flow
 
 - On startup, the producer registers its Avro schemas with Schema Registry and caches the returned schema IDs
