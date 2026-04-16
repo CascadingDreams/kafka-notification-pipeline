@@ -15,6 +15,7 @@ export interface Event {
 export type ToastType = 'success' | 'error'
 
 export interface Toast {
+  //temp pop up
   id: number
   msg: string
   type: ToastType

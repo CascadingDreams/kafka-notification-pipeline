@@ -33,11 +33,59 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 
 ![Architecture diagram](docs/imgs/Kafka-notification-pipeline-diagram.png)
 
+### 1. The big picture
+
+_What is this system doing at a high level?_
+
+```mermaid
+flowchart LR
+    A["Your app or curl"] -->|"POST an event"| B["Producer API"]
+    B -->|"publish message"| C["Kafka"]
+    C -->|"consume message"| D["Consumer"]
+    D -->|"save to database"| E["PostgreSQL"]
+    F["Dashboard"] -->|"read stats"| B
+```
+
+An **event** (e.g. a user registered, a transaction exceeded a threshold) is sent to the **Producer API**. The Producer publishes it to **Kafka**, which acts as a buffer. The **Consumer** picks it up and saves it to the **database**. The **Dashboard** reads stats from the Producer API to display what's happening live.
+
+### 2. Inside the Producer — how an event gets in
+
+_What happens between receiving the HTTP request and publishing to Kafka?_
+
+```mermaid
+flowchart TD
+    A["POST /events/user or /events/transactions"] --> B["Zod validates the request body"]
+    B -->|"invalid"| C["400 Bad Request"]
+    B -->|"valid"| D["Fetch schema ID from Schema Registry"]
+    D --> E["Encode event as Avro bytes"]
+    E --> F["Publish to Kafka topic"]
+    F --> G["202 Accepted"]
+```
+
+**Zod** checks the shape of the incoming JSON (correct fields, correct types). **Avro** is a compact binary format — before encoding, the Producer fetches a schema ID from the **Schema Registry** so both producer and consumer agree on the message format.
+
+### 3. Inside the Consumer — how a message gets processed
+
+_What happens after Kafka delivers a message?_
+
+```mermaid
+flowchart TD
+    A["New message arrives from Kafka"] --> B["Decode Avro bytes using schema ID"]
+    B -->|"decode fails"| E["Send raw bytes to DLQ topic"]
+    B -->|"decoded OK"| C["INSERT into PostgreSQL events table"]
+    C -->|"insert fails"| E
+    C -->|"insert OK"| D["Commit offset back to Kafka"]
+```
+
+The **offset** tells Kafka how far the Consumer has read. The Consumer only commits the offset **after** a successful save — so if something crashes, the message gets redelivered. This is called **at-least-once delivery**.
+
+The **DLQ** (Dead Letter Queue) is a separate Kafka topic where broken messages land so they aren't lost and can be inspected later.
+
 ---
 
 ## Build status
 
-- [x] Docker Compose stack — Kafka (KRaft), Kafbat UI, PostgreSQL, Schema Registry, Producer, Consumer
+- [x] Docker Compose stack — Kafka (KRaft), Kafbat UI, PostgreSQL, Schema Registry, Producer, Consumer, Dashboard
 - [x] PostgreSQL schema — `events` table with idempotent insert pattern
 - [x] Makefile — `make up`, `make down`, `make logs`, `make db`, `make seed`, `make test`
 - [x] Producer service — Hono API + Zod validation + Avro serialisation + Schema Registry registration
@@ -94,12 +142,13 @@ Copy `env.example` to `.env` (or run `make setup`):
 ```
 POSTGRES_USER=
 POSTGRES_PASSWORD=
+POSTGRES_DB=
+POSTGRES_HOST=
+POSTGRES_PORT=
+KAFKAJS_NO_PARTITIONER_WARNING= # optional
 KAFKA_BOOTSTRAP_SERVERS=localhost:9094
 SCHEMA_REGISTRY_URL=http://localhost:8081
-KAFKAJS_NO_PARTITIONER_WARNING=   # optional
 ```
-
-Production deployments also require `KAFKA_API_KEY`, `KAFKA_API_SECRET`, `SCHEMA_REGISTRY_API_KEY`, and `SCHEMA_REGISTRY_API_SECRET`.
 
 Never commit `.env` — it is gitignored.
 

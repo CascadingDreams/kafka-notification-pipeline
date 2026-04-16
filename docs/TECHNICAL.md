@@ -300,3 +300,5 @@ cd consumer  && npm test
 | `EventLog.test.tsx` | 7 | Empty state, row count, event types, CSS classes per type and status |
 | `Pipeline.test.tsx` | 5 | Node/arrow rendering, send callbacks, error path |
 | `Throughput.test.tsx` | 3 | Empty state message, chart container with data |
+
+
