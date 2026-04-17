@@ -45,4 +45,5 @@ seed:
 # Runs vitest
 test:
 	cd producer && npm ci && npm test -- --run
+	cd dashboard && npm ci && npm test -- --run
 	cd consumer && npm ci && npm test -- --run
