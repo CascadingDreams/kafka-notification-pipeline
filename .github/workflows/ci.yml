@@ -8,4 +8,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24.x'
-      - run: make test
+      - run: cd producer && npm install && npm test -- --run
+      - run: cd dashboard && npm install && npm test -- --run
+      - run: cd consumer && npm install && npm test -- --run
