@@ -60,7 +60,7 @@ An **event** (e.g. a user registered, a transaction exceeded a threshold) is sen
 - [x] React dashboard — live pipeline visualiser, stat cards, throughput chart, event log (polls every 3 s)
 - [x] Dashboard migrated to TypeScript — all components typed, shared `types.ts`, strict mode enabled
 - [x] Dashboard component tests — 21 tests across StatCards, EventLog, Pipeline, Throughput (Vitest + Testing Library)
-- [ ] GitHub Actions CI
+- [x] GitHub Actions CI — lint + tests on push/PR (Node 24.x)
 
 ---
 
