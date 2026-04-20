@@ -39,7 +39,8 @@ The **DLQ** (Dead Letter Queue) is a separate Kafka topic where broken messages 
 
 ## Schema Registry flow
 
-- On startup, the producer registers its Avro schemas with Schema Registry and caches the returned schema IDs
+- On startup, the producer polls `{SCHEMA_REGISTRY_URL}/subjects` in a readiness loop — up to 10 retries with 2-second delays (20-second timeout) — before attempting registration
+- Once ready, it reads the `.avsc` files from disk, registers each schema, and caches the returned integer schema IDs in memory
 - When an HTTP request arrives, Zod validates the payload at the API boundary before anything touches Kafka
 - For each valid event, the producer encodes the payload as Avro bytes with the schema ID embedded, and produces it to the correct Kafka topic
 - The consumer receives raw Avro bytes and reads the embedded schema ID from each message
@@ -101,7 +102,11 @@ Subscribes to `user.events` and `transaction.events` as group `notification-grou
 
 For each message: decode Avro via Schema Registry → insert to PostgreSQL → commit offset. On any error, the raw bytes are forwarded to `dlq` and the consumer moves on.
 
-**At-least-once delivery** — `autoCommit: false`, offset only commits after a successful DB write. The idempotent insert (`ON CONFLICT (event_id) DO NOTHING`) handles redelivery safely.
+**Startup behaviour** — `fromBeginning: true`, so on the first run the consumer reads from offset 0 and replays all existing messages. Subsequent runs resume from the last committed offset.
+
+**At-least-once delivery** — `autoCommit: false`, offset only commits after a successful DB write. If the consumer restarts mid-processing, the message is redelivered. The idempotent insert (`ON CONFLICT (event_id) DO NOTHING`) makes redelivery safe.
+
+**DLQ routing** — on any error (decode failure or DB failure) the raw Avro bytes are forwarded to the `dlq` topic and the consumer moves on without committing the offset for that message. DLQ messages carry no key, so ordering within the DLQ is not guaranteed. Because the offset is not committed on failure, the message will be redelivered if the consumer restarts — it will land in the DLQ again rather than being silently dropped.
 
 **Database insert**
 ```sql
@@ -109,7 +114,32 @@ INSERT INTO events(event_id, event_type, user_id, payload, occurred_at)
 VALUES ($1, $2, $3, $4, $5)
 ON CONFLICT (event_id) DO NOTHING
 ```
-Transaction fields (`amount`, `currency`, `metadata`) are stored in the JSONB `payload` column. Both event types share this insert path.
+Transaction fields (`amount`, `currency`, `metadata`) are stored in the JSONB `payload` column. User events store only `{metadata: {...}}`. Both event types share this insert path.
+
+---
+
+## Database schema
+
+Defined in `db/init.sql` and applied automatically on first container start via the PostgreSQL Docker entrypoint.
+
+```sql
+CREATE TABLE IF NOT EXISTS events (
+    id           SERIAL       PRIMARY KEY,
+    event_id     UUID         UNIQUE NOT NULL,
+    event_type   TEXT         NOT NULL,
+    user_id      UUID         NOT NULL,
+    payload      JSONB        NOT NULL,
+    occurred_at  TIMESTAMPTZ  NOT NULL,
+    processed_at TIMESTAMPTZ  DEFAULT NOW(),
+    status       TEXT         DEFAULT 'processed'
+);
+
+CREATE INDEX idx_events_type ON events(event_type);
+CREATE INDEX idx_events_user ON events(user_id);
+CREATE INDEX idx_events_time ON events(processed_at);
+```
+
+`event_id` carries the `UNIQUE` constraint that makes the `ON CONFLICT DO NOTHING` insert idempotent. `payload` is JSONB and holds all event-type-specific fields — transaction events include `amount`, `currency`, and `metadata`; user events include only `metadata`. `processed_at` is the wall-clock time the consumer wrote the row; `occurred_at` is the timestamp embedded in the Kafka message. `status` is always `'processed'` on the happy path — there is no DB-level record for DLQ'd messages, only the `dlq` Kafka topic.
 
 ---
 
@@ -337,5 +367,22 @@ cd consumer  && npm test
 | `EventLog.test.tsx` | 7 | Empty state, row count, event types, CSS classes per type and status |
 | `Pipeline.test.tsx` | 5 | Node/arrow rendering, send callbacks, error path |
 | `Throughput.test.tsx` | 3 | Empty state message, chart container with data |
+
+**Producer test suite**
+
+| File | Tests | What is covered |
+|---|---|---|
+| `events.test.ts` | 6 | Zod schema validation — invalid event types, non-UUID user_id, negative amount, non-AUD currency, valid payloads |
+
+**Consumer test suite**
+
+The consumer has no implemented unit tests — the test file contains three `todo` stubs for: inserting events to postgres, routing failed messages to the DLQ, and committing offset after a successful DB write. Integration tests against a real Kafka and Postgres instance would be the most meaningful coverage here.
+
+**What is not tested**
+
+- Producer HTTP endpoints (no request/response integration tests)
+- Kafka produce/consume path end-to-end
+- Schema Registry registration flow
+- DLQ routing trigger conditions
 
 

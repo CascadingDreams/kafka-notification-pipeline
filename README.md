@@ -1,5 +1,7 @@
 # kafka-notification-pipeline
 
+![Dashboard live preview](docs/imgs/dashboard.gif)
+
 Inspired by real-world financial services infrastructure, where event-driven pipelines process transactions, trigger notifications, and feed audit systems at scale. A Hono producer API validates requests with Zod and serialises events as Avro to Apache Kafka via Confluent Schema Registry. A TypeScript consumer decodes each message using the embedded schema ID, persists it to PostgreSQL with idempotent inserts, commits offsets manually for at-least-once delivery, and routes any failed messages to a dead letter queue. A React 18 + TypeScript dashboard polls the producer API every 3 seconds to visualise live event throughput, per-type stat cards, a pipeline flow diagram, and a scrollable event log.
 
 ---
@@ -120,6 +122,56 @@ Never commit `.env` — it is gitignored.
 ## Why Kafka?
 
 At scale in financial services, one event stream fans out to multiple independent consumers simultaneously — fraud detection, push notifications, audit logging, data warehouse — all reading the same Kafka topic without knowing about each other. This project demonstrates that pattern at a smaller scale: a single producer, a single consumer, but with the architectural vocabulary (topics, partitions, consumer groups, offsets, DLQ) that transfers directly to production systems.
+
+---
+
+---
+
+## Deployment - stretch goal _(work in progress)_
+
+### Architecture overview
+
+The production stack will run on AWS with ECS Fargate managing all application containers — producer, consumer, and dashboard — with no servers to patch or manage. Apache Kafka will be self-hosted on an EC2 instance alongside the Confluent Schema Registry. RDS PostgreSQL will handle persistence. An Application Load Balancer will sit at the public entry point, terminating HTTPS via an ACM certificate and routing traffic to the ECS services.
+
+All runtime secrets (database credentials, Kafka bootstrap address, Schema Registry URL) will be stored in AWS Secrets Manager and injected into containers at task launch. GitHub Actions will handle CI/CD using OIDC federation.
+
+---
+
+### Deployment status
+
+#### Plan
+
+- [ ] VPC with public and private subnets across two AZs
+- [ ] ECR repositories for producer, consumer, and dashboard images
+- [ ] Kafka EC2 instance with Confluent Schema Registry (KRaft mode, no Zookeeper)
+- [ ] RDS PostgreSQL instance in a private subnet
+- [ ] Secrets Manager secrets for all runtime credentials
+- [ ] IAM task execution roles with scoped Secrets Manager and ECR read permissions
+- [ ] GitHub OIDC IAM role for CI/CD (no long-lived access keys)
+- [ ] ECS cluster (Fargate capacity provider)
+- [ ] Task definitions for producer, consumer, and dashboard (secrets injected via `secretsFrom`)
+- [ ] ECS services wired to the cluster and target groups
+- [ ] ALB with HTTPS listener and ACM certificate
+- [ ] Security groups: ALB → ECS, ECS → Kafka EC2, ECS → RDS (least-privilege ingress only)
+
+#### Terraform
+
+- [ ] `terraform init`
+- [ ] `terraform plan` — review the execution plan before applying
+- [ ] `terraform apply` — provision or update infrastructure
+
+#### Per-deploy (automated via GitHub Actions)
+
+- [ ] Push to `main` triggers the CI workflow
+- [ ] Lint and Vitest tests run across producer, consumer, and dashboard
+- [ ] Docker images are built and pushed to ECR
+- [ ] ECS services receive a rolling update with zero downtime
+
+---
+
+### Local development
+
+`docker compose up` brings up the full stack locally — Kafka, Schema Registry, Kafbat UI, PostgreSQL, producer, consumer, and dashboard — with a single command. See [Quick start](#quick-start) for the full command reference.
 
 ---
 
