@@ -1,4 +1,6 @@
-import { describe, it } from 'vitest'
+import { describe, it, expect } from 'vitest'
+
+// requires integration testing set up
 
 describe('consumer', () => {
     it.todo('inserts events to postgres')
