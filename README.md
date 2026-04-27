@@ -26,7 +26,8 @@ Inspired by real-world financial services infrastructure, where event-driven pip
 | Database | PostgreSQL 16 | Persists events, idempotent inserts |
 | Frontend | React 18 + TypeScript + Vite | Live pipeline visualiser |
 | Testing | Vitest + Testing Library | Unit tests across producer, consumer, and dashboard |
-| Infra | Docker Compose | Full stack with one command |
+| Infra (local) | Docker Compose | Full stack with one command |
+| Infra (prod) | AWS ECS Fargate + EC2 + RDS | See [Deployment](#deployment-work-in-progress) |
 | CI | GitHub Actions | Lint + tests on push/PR |
 
 ---
@@ -125,53 +126,50 @@ At scale in financial services, one event stream fans out to multiple independen
 
 ---
 
----
-
-## Deployment - stretch goal _(work in progress)_
+## Deployment _(work in progress)_
 
 ### Architecture overview
 
-The production stack will run on AWS with ECS Fargate managing all application containers — producer, consumer, and dashboard — with no servers to patch or manage. Apache Kafka will be self-hosted on an EC2 instance alongside the Confluent Schema Registry. RDS PostgreSQL will handle persistence. An Application Load Balancer will sit at the public entry point, terminating HTTPS via an ACM certificate and routing traffic to the ECS services.
+| Component | Where |
+|---|---|
+| Kafka (`apache/kafka:3.9.0`) | Single EC2 t3.micro |
+| Schema Registry (`confluentinc/cp-schema-registry`) | Same EC2 (Docker) |
+| Producer (Hono) | ECS Fargate |
+| Consumer (Node.js) | ECS Fargate |
+| Dashboard (nginx) | ECS Fargate |
+| PostgreSQL | RDS t3.micro |
 
-All runtime secrets (database credentials, Kafka bootstrap address, Schema Registry URL) will be stored in AWS Secrets Manager and injected into containers at task launch. GitHub Actions will handle CI/CD using OIDC federation.
+### Deployment checklist
 
----
+#### Infrastructure (Terraform)
 
-### Deployment status
-
-#### Plan
-
-- [ ] VPC with public and private subnets across two AZs
-- [ ] ECR repositories for producer, consumer, and dashboard images
-- [ ] Kafka EC2 instance with Confluent Schema Registry (KRaft mode, no Zookeeper)
-- [ ] RDS PostgreSQL instance in a private subnet
-- [ ] Secrets Manager secrets for all runtime credentials
-- [ ] IAM task execution roles with scoped Secrets Manager and ECR read permissions
-- [ ] GitHub OIDC IAM role for CI/CD (no long-lived access keys)
-- [ ] ECS cluster (Fargate capacity provider)
-- [ ] Task definitions for producer, consumer, and dashboard (secrets injected via `secretsFrom`)
-- [ ] ECS services wired to the cluster and target groups
-- [ ] ALB with HTTPS listener and ACM certificate
 - [ ] Security groups: ALB → ECS, ECS → Kafka EC2, ECS → RDS (least-privilege ingress only)
+- [ ] EC2 t3.micro for Kafka + Schema Registry (Docker, KRaft mode)
+- [ ] RDS PostgreSQL instance (security group restricts access to ECS tasks only)
+- [ ] ECR repositories for producer, consumer, and dashboard images
+- [ ] ECS cluster (Fargate capacity provider)
+- [ ] Task definitions for producer, consumer, and dashboard
+- [ ] ECS services wired to the cluster
+- [ ] ALB with HTTPS listener and ACM certificate
 
-#### Terraform
+#### Secrets and IAM
+
+- [ ] Secrets Manager secrets for DB credentials, Kafka bootstrap address, Schema Registry URL
+- [ ] IAM task execution role with scoped Secrets Manager + ECR read permissions
+- [ ] GitHub OIDC IAM role for CI/CD (no long-lived access keys)
+
+#### Terraform workflow
 
 - [ ] `terraform init`
-- [ ] `terraform plan` — review the execution plan before applying
-- [ ] `terraform apply` — provision or update infrastructure
+- [ ] `terraform plan`
+- [ ] `terraform apply`
 
-#### Per-deploy (automated via GitHub Actions)
+#### CI/CD (GitHub Actions — per deploy)
 
-- [ ] Push to `main` triggers the CI workflow
-- [ ] Lint and Vitest tests run across producer, consumer, and dashboard
-- [ ] Docker images are built and pushed to ECR
-- [ ] ECS services receive a rolling update with zero downtime
-
----
-
-### Local development
-
-`docker compose up` brings up the full stack locally — Kafka, Schema Registry, Kafbat UI, PostgreSQL, producer, consumer, and dashboard — with a single command. See [Quick start](#quick-start) for the full command reference.
+- [ ] Push to `main` triggers the workflow
+- [ ] Lint + Vitest tests pass across producer, consumer, and dashboard
+- [ ] Docker images built and pushed to ECR
+- [ ] ECS services updated with a rolling deploy
 
 ---
 

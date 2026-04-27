@@ -105,4 +105,7 @@ k8s-local/
 
 # sqltools
 kafka_notifications.session.sql
-*.session.sql
+*.session.sql.terraform/
+
+#terraform
+.terraform/
