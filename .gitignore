@@ -109,3 +109,5 @@ kafka_notifications.session.sql
 
 #terraform
 .terraform/
+terraform.tfvars
+*.tfvars
