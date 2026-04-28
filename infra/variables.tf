@@ -21,3 +21,8 @@ variable "db_instance" {
     description = "database instance type RDS"
     default = "db.t3.micro"
 }
+
+variable "my_ip" {
+  type        = string
+  description = "Your public IP address for SSH access"
+}
