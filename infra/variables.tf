@@ -23,6 +23,21 @@ variable "db_instance" {
 }
 
 variable "my_ip" {
-  type        = string
+  type = string
   description = "Your public IP address for SSH access"
+}
+
+variable "db_name" {
+    type = string
+    description = "Your database name"
+}
+
+variable "db_username" {
+    type = string
+    description = "Your database username"
+}
+
+variable "db_password" {
+    type = string
+    description = "Your database password"
 }
