@@ -3,3 +3,8 @@ project_name = "project name"
 kafka_instance = "instance"
 db_instance = "instance"
 my_ip = "your ip"
+
+# postgres
+db_name     = "db name"
+db_username = "username"
+db_password = "pass"

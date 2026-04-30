@@ -15,7 +15,7 @@ resource "aws_security_group" "allow_ec2" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_kafka" {
   security_group_id = aws_security_group.allow_ec2.id
-  cidr_ipv4         = "0.0.0.0/0"
+  referenced_security_group_id = aws_security_group.allow_ecs.id
   from_port         = 9092
   ip_protocol       = "tcp"
   to_port           = 9092
@@ -31,7 +31,7 @@ resource "aws_vpc_security_group_ingress_rule" "allow_ssh" {
 
 resource "aws_vpc_security_group_ingress_rule" "allow_schema_registry" {
   security_group_id = aws_security_group.allow_ec2.id
-  cidr_ipv4         = "0.0.0.0/0"
+  referenced_security_group_id = aws_security_group.allow_ecs.id
   from_port         = 8081
   ip_protocol       = "tcp"
   to_port           = 8081
