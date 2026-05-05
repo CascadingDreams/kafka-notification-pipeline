@@ -69,7 +69,7 @@ app.get(
 
 app.get(
     // returns last 10 events
-    'events/recent',
+    '/events/recent',
     async (c) => {
         const result = await pool.query(
             'SELECT * FROM events ORDER BY occurred_at DESC LIMIT 10'
